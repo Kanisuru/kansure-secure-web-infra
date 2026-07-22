@@ -1,0 +1,42 @@
+name: Azure WebApp CI/CD
+
+on:
+  push:
+    branches:
+      - main # deploy v1 to production
+      - staging # deploy v2 to staging
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build app
+        run: npm run build --if-present
+
+      - name: Deploy to Azure WebApp (Production)
+        if: github.ref == 'refs/heads/main'
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_CREDENTIALS }}
+          package: .
+
+      - name: Deploy to Azure WebApp (Staging Slot)
+        if: github.ref == 'refs/heads/staging'
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          slot-name: ${{ secrets.AZURE_WEBAPP_SLOT }}
+          publish-profile: ${{ secrets.AZURE_CREDENTIALS }}
+          package: .
