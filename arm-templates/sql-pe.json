@@ -1,0 +1,66 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "sqlServerName": { "type": "string", "defaultValue": "kansure-sql-server" },
+    "sqlDbName": { "type": "string", "defaultValue": "kansuredb" },
+    "location": { "type": "string", "defaultValue": "westus" },
+    "adminUser": { "type": "string", "defaultValue": "sqladmin" },
+    "adminPassword": { "type": "securestring" }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2022-05-01-preview",
+      "name": "[parameters('sqlServerName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "administratorLogin": "[parameters('adminUser')]",
+        "administratorLoginPassword": "[parameters('adminPassword')]",
+        "publicNetworkAccess": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2022-05-01-preview",
+      "name": "[concat(parameters('sqlServerName'), '/', parameters('sqlDbName'))]",
+      "location": "[parameters('location')]",
+      "properties": { "collation": "SQL_Latin1_General_CP1_CI_AS" },
+      "sku": { "name": "S0", "tier": "Standard" }
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2022-09-01",
+      "name": "kansure-sql-pe",
+      "location": "[parameters('location')]",
+      "properties": {
+        "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets','kansure-vnet','data-subnet')]" },
+        "privateLinkServiceConnections": [
+          {
+            "name": "kansure-sql-pe-conn",
+            "properties": {
+              "privateLinkServiceId": "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]",
+              "groupIds": ["sqlServer"]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2022-09-01",
+      "name": "privatelink.database.windows.net",
+      "location": "global"
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2022-09-01",
+      "name": "privatelink.database.windows.net/kansure-sql-dns-link",
+      "location": "global",
+      "properties": {
+        "virtualNetwork": { "id": "[resourceId('Microsoft.Network/virtualNetworks','kansure-vnet')]" },
+        "registrationEnabled": false
+      }
+    }
+  ]
+}
