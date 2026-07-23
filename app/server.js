@@ -4,7 +4,7 @@ const port = process.env.PORT || 8080;
 const version = process.env.APP_VERSION || 'v1';
 
 app.get('/', (req, res) => {
-    res.send('Hello from Kansure Web App - ${version}');
+    res.send(`Hello from Kansure Web App - ${version}`);
 });
 
 app.listen(port, () => {
