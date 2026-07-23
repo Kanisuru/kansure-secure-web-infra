@@ -37,6 +37,8 @@ jobs:
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           package: ./app
+          # Set environment variable for production
+          startup-command: "APP_VERSION=v1 node server.js"
 
       - name: Deploy to Azure WebApp (Staging Slot)
         if: github.ref == 'refs/heads/staging'
@@ -45,3 +47,5 @@ jobs:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           slot-name: ${{ secrets.AZURE_WEBAPP_SLOT }}
           package: ./app
+          # Set environment variable for staging
+          startup-command: "APP_VERSION=v2 node server.js"
